@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🐍 贪吃蛇 - 专业版</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>贪吃蛇</h1>
+      <div class="score-panel">
+        <div>分数: <span id="score">0</span></div>
+        <div>最高分: <span id="highScore">0</span></div>
+      </div>
+      <div class="food-legend">
+        <div>🍎 苹果: +1</div>
+        <div>🍌 香蕉: +3</div>
+        <div>🍒 樱桃: +5</div>
+      </div>
+    </header>
+
+    <main>
+      <div class="canvas-container">
+        <canvas id="gameCanvas" width="1125" height="750"></canvas>
+      </div>
+      
+      <div id="uiOverlay">
+        <div id="startScreen" class="screen active">
+          <h2>🐍 贪吃蛇</h2>
+          <p>使用 <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd> 或 <kbd>WASD</kbd> 控制方向</p>
+          <div class="difficulty">
+            <label><input type="radio" name="difficulty" value="easy" checked> 简单 (5格/秒)</label>
+            <label><input type="radio" name="difficulty" value="medium"> 中等 (8格/秒)</label>
+            <label><input type="radio" name="difficulty" value="hard"> 困难 (12格/秒)</label>
+          </div>
+
+          <!-- 模式选择 -->
+          <div class="mode">
+            <label><input type="radio" name="mode" value="single" checked> 单人</label>
+            <label><input type="radio" name="mode" value="local"> 本地 2 人（箭头 vs WASD）</label>
+            <label><input type="radio" name="mode" value="ai"> 人机（你 vs AI）</label>
+          </div>
+
+          <button id="startBtn">开始游戏</button>
+        </div>
+
+        <div id="gameOverScreen" class="screen">
+          <h2>游戏结束！</h2>
+          <p>最终得分: <span id="finalScore">0</span></p>
+          <button id="restartBtn">再玩一次</button>
+          <button id="menuBtn">返回主菜单</button>
+        </div>
+
+        <div id="pauseTip" class="tip">⏸ 按 <kbd>空格</kbd> 或 <kbd>P</kbd> 继续/暂停，按 <kbd>E</kbd> 结束</div>
+
+        <!-- 暂停菜单（继续 / 结束） -->
+        <div id="pauseMenu" class="screen">
+          <h3>已暂停</h3>
+          <div class="pause-actions">
+            <button id="pauseContinueBtn">继续</button>
+            <button id="pauseEndBtn">结束游戏</button>
+          </div>
+        </div>
+
+        <!-- 刷新后恢复提示 -->
+        <div id="restorePrompt" class="screen">
+          <h3>已检测到未结束的游戏</h3>
+          <p>是否恢复上次的游戏进度？</p>
+          <div class="restore-actions">
+            <button id="restoreBtn">恢复游戏</button>
+            <button id="newGameBtn">开始新游戏</button>
+          </div>
+        </div>
+
+      </div>
+    </main>
+
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
