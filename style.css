@@ -250,3 +250,62 @@ footer {
     font-size: 1.1rem;
   }
 }
+
+.leaderboard {
+  position: absolute;
+  top: 10px;
+  right: 20px;
+  width: 220px;
+  background: rgba(30, 30, 46, 0.85);
+  border-radius: 10px;
+  padding: 15px;
+  font-size: 1rem;
+  z-index: 10;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.leaderboard h3 {
+  color: #f9e2af;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+#rankList, #onlineRankList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#rankList li, #onlineRankList li {
+  padding: 6px 0;
+  border-bottom: 1px solid #313244;
+  display: flex;
+  justify-content: space-between;
+}
+
+#rankList li:first-child { color: #f9e2af; font-weight: bold; }
+#rankList li:nth-child(2) { color: #cba6f7; }
+#rankList li:nth-child(3) { color: #89b4fa; }
+
+.online-board {
+  margin-top: 20px;
+  padding-top: 15px;
+  border-top: 1px dashed #585b70;
+}
+
+#submitScoreBtn {
+  width: 100%;
+  padding: 8px;
+  margin-top: 10px;
+  background: #89b4fa;
+  color: #1e1e2e;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+#submitScoreBtn:disabled {
+  background: #6c7086;
+  cursor: not-allowed;
+}

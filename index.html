@@ -21,6 +21,23 @@
       </div>
     </header>
 
+    <!-- 在 <header> 结束标签后、<main> 前插入 -->
+    <aside id="leaderboard" class="leaderboard">
+      <h3>🏆 排行榜（本地）</h3>
+      <ol id="rankList">
+        <li>暂无数据</li>
+      </ol>
+      
+      <!-- 预留：未来连后端 -->
+      <div id="onlineLeaderboard" class="online-board" style="display:none">
+        <h4>🌐 在线排行榜</h4>
+        <ol id="onlineRankList">
+          <li>等待加载...</li>
+        </ol>
+        <button id="submitScoreBtn" disabled>提交分数</button>
+      </div>
+    </aside>
+
     <main>
       <div class="canvas-container">
         <canvas id="gameCanvas" width="1125" height="750"></canvas>
@@ -43,7 +60,7 @@
             <label><input type="radio" name="mode" value="ai"> 人机（你 vs AI）</label>
           </div>
 
-          <button id="startBtn">开始游戏</button>
+          <button id="startBtn" type="button">开始游戏</button>
         </div>
 
         <div id="gameOverScreen" class="screen">
@@ -79,6 +96,11 @@
 
   </div>
 
-  <script src="game.js"></script>
+<script type="module">
+  import { Game } from './game/Game.js';
+  window.addEventListener('load', () => {
+    new Game(); 
+  });
+</script>
 </body>
 </html>
