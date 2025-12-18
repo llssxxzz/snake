@@ -309,3 +309,15 @@ footer {
   background: #6c7086;
   cursor: not-allowed;
 }
+.audio-control {
+  margin-top: 10px;
+  text-align: center;
+}
+
+#audio-control {
+  background: #89b4fa;
+  border: none;
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+}

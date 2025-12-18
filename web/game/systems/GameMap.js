@@ -17,7 +17,6 @@ export class GameMap {
     }
     return false;
   }
-
   static isOccupied(point, snakes, foods) {
     for (const snake of snakes) {
       for (const seg of snake.body) {

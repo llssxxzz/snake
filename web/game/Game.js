@@ -1,8 +1,8 @@
 // game/Game.js
-import { 
+import {
   GRID_COLS, GRID_ROWS, CELL_SIZE,
   DIFFICULTY_CONFIG, MAX_FOOD, MODES,
-  SNAKE_COLORS 
+  SNAKE_COLORS
 } from './config.js';
 import { isEqual } from './utils.js';
 import { Snake } from './entities/Snake.js';
@@ -16,7 +16,7 @@ export class Game {
     this.canvas = document.getElementById('gameCanvas');
     this.canvas.width = GRID_COLS * CELL_SIZE;
     this.canvas.height = GRID_ROWS * CELL_SIZE;
-    
+
     this.renderer = new GameRenderer(this.canvas);
     this.stateManager = new GameStateManager();
 
@@ -25,6 +25,10 @@ export class Game {
     this.gameOverScreen = document.getElementById('gameOverScreen');
     this.pauseMenu = document.getElementById('pauseMenu');
     this.restorePrompt = document.getElementById('restorePrompt');
+
+    // ✅ 新增：排行榜元素引用
+    this.rankListEl = document.getElementById('rankList');
+    this.onlineRankListEl = document.getElementById('onlineRankList');
 
     this.snakes = [];
     this.foods = [];
@@ -36,9 +40,68 @@ export class Game {
     this.animationId = null;
     this.frameCount = 0;
 
+    // ✅ 新增：初始化本地排行榜
+    this.localLeaderboard = this.loadLocalLeaderboard();
+    this.updateLocalLeaderboardUI();
+
+    this.loadOnlineLeaderboard();
+
     this.bindEvents();
     if (this.stateManager.hasSavedState()) {
       this.showRestorePrompt();
+    }
+  }
+
+  // ✅ 新增：加载本地排行榜
+  loadLocalLeaderboard() {
+    try {
+      const data = localStorage.getItem('snakeLeaderboard');
+      return data ? JSON.parse(data) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  // ✅ 新增：保存本地排行榜
+  saveLocalLeaderboard() {
+    try {
+      localStorage.setItem('snakeLeaderboard', JSON.stringify(this.localLeaderboard));
+    } catch (e) {
+      console.warn('保存本地排行榜失败');
+    }
+  }
+
+  // ✅ 新增：更新本地排行榜 UI
+  updateLocalLeaderboardUI() {
+    if (!this.rankListEl) return;
+
+    if (this.localLeaderboard.length === 0) {
+      this.rankListEl.innerHTML = '<li>暂无数据</li>';
+      return;
+    }
+
+    this.rankListEl.innerHTML = this.localLeaderboard
+      .slice(0, 10)
+      .map((entry, i) =>
+        `<li><span>#${i + 1}</span> <span>${entry.score}</span></li>`
+      ).join('');
+  }
+
+  playBGM() {
+    const bgm = document.getElementById('bgm');
+    if (bgm) {
+      bgm.volume = 0.3; // 30% 音量
+      bgm.loop = true;  // 循环播放
+      bgm.play().catch(e => console.warn('BGM 播放失败:', e));
+    }
+  }
+
+  playSound(id) {
+    const sound = document.getElementById(id);
+    if (sound) {
+      sound.currentTime = 0; // 重头播放
+      sound.volume = 0.6;     // 60% 音量
+      sound.play().catch(e => console.warn(`${id} 播放失败:`, e));
     }
   }
 
@@ -47,7 +110,7 @@ export class Game {
     const startY = Math.floor(GRID_ROWS / 2);
 
     this.snakes = [];
-    
+
     if (this.mode === 'single') {
       this.snakes.push(new Snake(0, startX, startY, 'RIGHT', SNAKE_COLORS.player0, false));
     } else if (this.mode === 'local') {
@@ -86,7 +149,7 @@ export class Game {
     }
 
     const newHeads = this.snakes.map(s => s.alive ? s.simulateMove(s.nextDirection) : null);
-    const willGrow = newHeads.map((nh, i) => 
+    const willGrow = newHeads.map((nh, i) =>
       nh && this.foods.some(f => isEqual(nh, f.pos))
     );
 
@@ -141,6 +204,7 @@ export class Game {
         if (newHeads[si] && isEqual(newHeads[si], food.pos)) {
           this.snakes[si].score += food.score;
           this.renderer.animateScoreFlyIn(food.score, food.pos, this.snakes[si].color);
+          this.playSound('eat-sound');
           eatenIndices.push(fi);
         }
       }
@@ -165,7 +229,7 @@ export class Game {
 
     // 结束？
     if (losers.size > 0) {
-      this.gameOver(Array.from(losers)[0]);
+      this.gameOver(Array.from(losers)[0]); // ✅ 修复：调用 gameOver（不是 gameOverFor）
     } else {
       this.render();
       this.saveGameState();
@@ -176,7 +240,7 @@ export class Game {
 
   computeAIMove(snake) {
     if (!this.foods.length) return;
-    
+
     let bestFood = null;
     let minDist = Infinity;
     for (const food of this.foods) {
@@ -222,7 +286,7 @@ export class Game {
   render() {
     this.renderer.clear();
     this.renderer.drawGrid();
-    
+
     for (const snake of this.snakes) {
       this.renderer.drawSnake(snake);
     }
@@ -239,58 +303,75 @@ export class Game {
     );
     this.stateManager.saveGameState(snapshot);
   }
-gameOver(loserId) {
-  const loser = this.snakes.find(s => s.id === loserId);
-  if (loser) loser.alive = false;
 
-  const alive = this.snakes.filter(s => s.alive);
+  // ✅ 已修复：单人模式显示"你的最终得分"
+  gameOver(loserId) {
+    const loser = this.snakes.find(s => s.id === loserId);
+    if (loser) loser.alive = false;
 
-  let text = '';
-  if (this.mode === 'single') {
-    // ✅ 单人模式：只关心玩家得分
-    const playerScore = this.snakes[0]?.score || 0;
-    text = `你的最终得分: ${playerScore}`;
-  } else {
-    // 多人模式：保留原逻辑
-    if (alive.length === 1) {
-      text = `玩家 ${alive[0].id + 1} 获胜！ 得分 ${alive[0].score}`;
-    } else if (alive.length === 0) {
-      text = '平局 / 双方都失败';
+    const alive = this.snakes.filter(s => s.alive);
+    let text = '';
+
+    if (this.mode === 'single') {
+      const playerScore = this.snakes[0]?.score || 0;
+      text = `你的最终得分: ${playerScore}`;
     } else {
-      text = '对局结束'; // 多于1人存活？理论上不会发生
+      if (alive.length === 1) {
+        text = `玩家 ${alive[0].id + 1} 获胜！ 得分 ${alive[0].score}`;
+      } else if (alive.length === 0) {
+        text = '平局 / 双方都失败';
+      } else {
+        text = '对局结束';
+      }
     }
+
+    // 更新高分 & 本地排行榜
+    const finalScore = Math.max(...this.snakes.map(s => s.score));
+    for (const s of this.snakes) {
+      this.stateManager.saveHighScore(s.score);
+    }
+
+    // ✅ 新增：更新本地排行榜
+    this.localLeaderboard.push({
+      score: finalScore,
+      date: Date.now(),
+      mode: this.mode
+    });
+
+    // 排序：分数降序，同分按时间升序
+    this.localLeaderboard.sort((a, b) =>
+      b.score - a.score || a.date - b.date
+    );
+    this.localLeaderboard = this.localLeaderboard.slice(0, 10);
+    this.saveLocalLeaderboard();
+    this.updateLocalLeaderboardUI();
+
+    // ✅ 新增：游戏结束自动上传到后端
+    this.submitScoreToBackend(finalScore); // 🔥 核心修改：自动调用
+
+    if (this.finalScoreEl) this.finalScoreEl.textContent = text;
+    if (this.gameOverScreen) this.gameOverScreen.classList.add('active');
+    this.playSound('game-over-sound');
+    this.gameRunning = false;
+    if (this.animationId) clearTimeout(this.animationId);
+    this.stateManager.clearSavedState();
   }
 
-  // 更新高分
-  for (const s of this.snakes) {
-    this.stateManager.saveHighScore(s.score);
-  }
-
-  if (this.finalScoreEl) this.finalScoreEl.textContent = text;
-  if (this.gameOverScreen) this.gameOverScreen.classList.add('active');
-
-  this.gameRunning = false;
-  if (this.animationId) clearTimeout(this.animationId);
-  this.stateManager.clearSavedState();
-}
   bindEvents() {
-    window.addEventListener('keydown', (e) => {
-        //阻止所有可能触发页面刷新/跳转的默认行为
-        if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault(); // 防止 Enter/空格触发表单提交
+    // 阻止 Shift+Enter 等默认行为
+    ['keydown', 'keyup'].forEach(type => {
+      window.addEventListener(type, (e) => {
+        if (e.key === 'Shift') {
+          e.preventDefault();
+          e.stopPropagation();
         }
-        //如果按了 Shift + Enter 或 Shift + Space，也阻止
-        if ((e.key === 'Enter' || e.key === ' ') && e.shiftKey) {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('Blocked Shift+Enter or Shift+Space');
-        }
-    }, true);
+      }, true);
+    });
 
     window.addEventListener('keydown', (e) => {
       if (this.restorePrompt?.classList.contains('active')) return;
       const key = e.key.toLowerCase();
-      
+
       if (key === ' ' || key === 'p') {
         if (this.gameRunning) this.togglePause();
         e.preventDefault();
@@ -341,6 +422,20 @@ gameOver(loserId) {
       });
     });
 
+    ///
+    document.getElementById('bgmToggle')?.addEventListener('click', () => {
+      const bgm = document.getElementById('bgm');
+      if (bgm) {
+        if (bgm.paused) {
+          bgm.play();
+          document.getElementById('bgmToggle').textContent = '🔊 关闭 BGM';
+        } else {
+          bgm.pause();
+          document.getElementById('bgmToggle').textContent = '🔇 开启 BGM';
+        }
+      }
+    });
+
     document.getElementById('pauseContinueBtn')?.addEventListener('click', () => this.togglePause());
     document.getElementById('pauseEndBtn')?.addEventListener('click', () => this.endFromPause());
     document.getElementById('restoreBtn')?.addEventListener('click', () => this.restoreSavedState());
@@ -353,13 +448,81 @@ gameOver(loserId) {
   startGame() {
     [this.startScreen, this.gameOverScreen, this.pauseMenu, this.restorePrompt]
       .forEach(el => el?.classList.remove('active'));
-    
     this.stateManager.clearSavedState();
     this.resetGame();
     this.gameRunning = true;
     this.gamePaused = false;
     this.frameCount = 0;
+    this.gameRunning = true;
+    this.gamePaused = false;
+    this.frameCount = 0;
+
+    //播放背景音乐
+    this.playBGM();
     this.gameLoop();
+  }
+
+  // ✅ 替换为自动上传方法（核心修改）
+  async submitScoreToBackend(score) {
+    try {
+      // 🔥 关键：使用绝对路径避免 CORS
+      const response = await fetch('http://localhost:8080/ranklist/update/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          score: score,
+          date: Date.now()
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.message === 'insert success') {
+        console.log(`✅ 成功提交 ${score} 分`);
+        this.loadOnlineLeaderboard(); // 自动刷新在线榜
+      } else {
+        throw new Error(data.message || '提交失败');
+      }
+    } catch (e) {
+      console.warn('❌ 自动提交失败，已记录本地榜:', e);
+      // ✅ 降级：保存到本地
+      this.localLeaderboard.push({ score, date: Date.now() });
+      this.saveLocalLeaderboard();
+      this.updateLocalLeaderboardUI();
+    }
+  }
+
+  // ✅ 修正：获取在线榜（使用绝对路径）
+  // game/Game.js → loadOnlineLeaderboard() 方法内
+  async loadOnlineLeaderboard() {
+    try {
+      // ✅ 改为 GET 请求，调用 /ranklist/get/ 接口
+      const response = await fetch('http://localhost:8080/ranklist/get/', {
+        method: 'post',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const data = await response.json();
+
+      if (data.status === 'success' && data.data && data.data.length) {
+        document.getElementById('onlineLeaderboard').style.display = 'block';
+
+        // ✅ 渲染榜单（data.data 是排行榜数组）
+        this.onlineRankListEl.innerHTML = data.data
+          .slice(0, 10)
+          .map((r, i) =>
+            `<li><span>#${i + 1}</span> <span>${r.score}</span></li>`
+          ).join('');
+      }
+    } catch (e) {
+      console.warn('❌ 加载在线榜失败，仅显示本地榜');
+      document.getElementById('onlineLeaderboard').style.display = 'none';
+    }
+  }
+
+  // ⚠️ 保留原方法（但已不被调用）
+  submitScore() {
+    // 已被 submitScoreToBackend 替代
   }
 
   restoreSavedState() {
@@ -396,12 +559,12 @@ gameOver(loserId) {
     this.gamePaused = false;
     this.gameRunning = false;
     if (this.animationId) clearTimeout(this.animationId);
-    
+
     const alive = this.snakes.filter(s => s.alive);
     let text = '游戏结束';
     if (alive.length === 1) text = `玩家 ${alive[0].id + 1} 获胜！ 得分 ${alive[0].score}`;
     else if (alive.length === 0) text = '平局 / 无存活玩家';
-    
+
     if (this.finalScoreEl) this.finalScoreEl.textContent = text;
     if (this.gameOverScreen) this.gameOverScreen.classList.add('active');
     this.stateManager.clearSavedState();

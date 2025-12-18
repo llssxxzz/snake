@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>🐍 贪吃蛇 - 专业版</title>
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
   <div id="app">
     <header>
@@ -19,6 +21,14 @@
         <div>🍌 香蕉: +3</div>
         <div>🍒 樱桃: +5</div>
       </div>
+
+      <div class="audio-control">
+        <button id="bgmToggle">🔊 关闭 BGM</button>
+      </div>
+      
+      <audio id="bgm" src="./assets/audio/bgm.mp3" preload="auto"></audio>
+      <audio id="eat-sound" src="./assets/audio/eat.mp3" preload="auto"></audio>
+      <audio id="game-over-sound" src="./assets/audio/game-over.mp3" preload="auto"></audio>
     </header>
 
     <!-- 在 <header> 结束标签后、<main> 前插入 -->
@@ -27,14 +37,13 @@
       <ol id="rankList">
         <li>暂无数据</li>
       </ol>
-      
+
       <!-- 预留：未来连后端 -->
-      <div id="onlineLeaderboard" class="online-board" style="display:none">
+      <div id="onlineLeaderboard" class="online-board">
         <h4>🌐 在线排行榜</h4>
         <ol id="onlineRankList">
           <li>等待加载...</li>
         </ol>
-        <button id="submitScoreBtn" disabled>提交分数</button>
       </div>
     </aside>
 
@@ -42,7 +51,7 @@
       <div class="canvas-container">
         <canvas id="gameCanvas" width="1125" height="750"></canvas>
       </div>
-      
+
       <div id="uiOverlay">
         <div id="startScreen" class="screen active">
           <h2>🐍 贪吃蛇</h2>
@@ -96,11 +105,12 @@
 
   </div>
 
-<script type="module">
-  import { Game } from './game/Game.js';
-  window.addEventListener('load', () => {
-    new Game(); 
-  });
-</script>
+  <script type="module">
+    import { Game } from './game/Game.js';
+    window.addEventListener('load', () => {
+      new Game();
+    });
+  </script>
 </body>
+
 </html>
